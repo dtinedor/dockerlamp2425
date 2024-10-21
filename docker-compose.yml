@@ -1,0 +1,48 @@
+services:
+  db:
+    image: mariadb:10.5         # Cambiar la imagen a MariaDB
+    container_name: mariadb_db  # Nombre del contenedor
+    ports:
+      - "3306:3306"             # Exponer puerto MariaDB
+    environment:
+      MYSQL_DATABASE: mydb       # Nombre de la base de datos
+      MYSQL_USER: user           # Usuario de MariaDB
+      MYSQL_PASSWORD: password   # Contraseña del usuario
+      MYSQL_ROOT_PASSWORD: rootpassword  # Contraseña de root
+    volumes:
+      - ./dump:/docker-entrypoint-initdb.d  # Para cargar volcados de la base de datos
+      - db_data:/var/lib/mysql               # Persistencia de los datos
+    networks:
+      - lamp_network
+
+  web:
+    build: 
+      context: .                # Carpeta donde está el Dockerfile
+    container_name: apache_php  # Nombre del contenedor
+    ports:
+      - "80:80"                 # Exponer puerto Apache
+    volumes:
+      - ./www:/var/www/html     # Volumen con los archivos de la web
+    depends_on:
+      - db                      # Apache depende de que la DB esté lista
+    networks:
+      - lamp_network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin   # Imagen de phpMyAdmin
+    container_name: phpmyadmin     # Nombre del contenedor
+    ports:
+      - "8080:80"                  # Exponer phpMyAdmin en puerto 8080
+    environment:
+      PMA_HOST: db                 # Conectar phpMyAdmin al servicio "db"
+      MYSQL_ROOT_PASSWORD: rootpassword  # Contraseña root de MariaDB
+    depends_on:
+      - db                         # phpMyAdmin depende de la DB
+    networks:
+      - lamp_network
+
+volumes:
+  db_data:   # Volumen persistente para la base de datos
+
+networks:
+  lamp_network:  # Red interna para conectar los contenedores
